@@ -108,4 +108,45 @@ class TomlBasedAppConfigTest extends AnyWordSpec {
     }
   }
 
+  "network" when {
+
+    "existing network requested" should {
+      "return requested" in {
+        val strVal =
+          """[networks]
+            |[networks.one]
+            |title = "first"
+            |stores = "http://stores.one"
+            |deals = "http://deals.one"
+            |
+            |[networks.two]
+            |title = "second"
+            |stores = "http://stores.two"
+            |deals = "http://deals.two"
+            |""".stripMargin
+
+        val parsed = Some(
+          NetworkDef(title = "second", storesLink = "http://stores.two", dealsLink = "http://deals.two"),
+        )
+
+        assertResult(parsed)(configFrom(strVal).network("two"))
+      }
+    }
+
+    "missind network requested" should {
+      "return None" in {
+        val strVal =
+          """[networks]
+            |[networks.one]
+            |title = "first"
+            |stores = "http://stores.one"
+            |deals = "http://deals.one"
+            |""".stripMargin
+
+        assertResult(None)(configFrom(strVal).network("two"))
+      }
+    }
+
+  }
+
 }
