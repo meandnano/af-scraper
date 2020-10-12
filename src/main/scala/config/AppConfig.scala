@@ -10,7 +10,7 @@ case class NetworkDef(title: String, storesLink: String, dealsLink: String, stor
 class ConfigException(reason: String) extends RuntimeException(reason)
 
 trait AppConfig {
-  def networks(): Seq[NetworkDef]
+  def networks(): Map[String, NetworkDef]
 
   def network(networkKey: String): Option[NetworkDef]
 }
@@ -22,18 +22,18 @@ class TomlBasedAppConfig(private val toml: TomlTable) extends AppConfig {
   private lazy val logger = LoggerFactory.getLogger(getClass.getSimpleName)
   private lazy val allNetworksTable = toml.getTable(KEY_NETWORKS)
 
-  override def networks(): Seq[NetworkDef] = {
+  override def networks(): Map[String, NetworkDef] = {
     if (!toml.isTable(KEY_NETWORKS)) {
       logger.error("No networks found")
-      Seq.empty
+      Map.empty
     } else {
       parseNetworks()
     }
   }
 
-  override def network(networkKey: String): Option[NetworkDef] = parseNetworks(Seq(networkKey)).headOption
+  override def network(networkKey: String): Option[NetworkDef] = parseNetworks(Seq(networkKey)).get(networkKey)
 
-  private def parseNetworks(keys: Seq[String] = Seq.empty): Seq[NetworkDef] = {
+  private def parseNetworks(keys: Seq[String] = Seq.empty): Map[String, NetworkDef] = {
     val allNetworkKeys = allNetworksTable.keySet()
       .asScala
 
@@ -59,11 +59,11 @@ class TomlBasedAppConfig(private val toml: TomlTable) extends AppConfig {
           title <- Option(table.getString("title"))
           storesLink <- Option(table.getString("stores"))
           dealsLink <- Option(table.getString("deals"))
-        } yield NetworkDef(title, storesLink, dealsLink, storesFilter.getOrElse(Seq.empty))
+        } yield key -> NetworkDef(title, storesLink, dealsLink, storesFilter.getOrElse(Seq.empty))
       }
     )
       .filter(_.nonEmpty)
       .map(_.get)
-      .toSeq
+      .toMap
   }
 }

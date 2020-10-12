@@ -3,12 +3,12 @@ package providers
 import com.fasterxml.jackson.databind.node.ObjectNode
 
 case class Store(internalId: Long,
-                 networkTitle: String,
+                 networkKey: String,
                  location: Option[PointLocation],
                  address: Option[String])
 
 object Store {
-  def apply(networkTitle: String)(node: ObjectNode): Option[Store] = {
+  def apply(networkKey: String)(node: ObjectNode): Option[Store] = {
     val internalId = Option(node.get("storeId"))
       .filter(_.isTextual)
       .map(_.asText)
@@ -31,7 +31,7 @@ object Store {
       .filter(_.isTextual)
       .map(_.textValue)
 
-    Some(new Store(internalId.get, networkTitle, location, address))
+    Some(new Store(internalId.get, networkKey, location, address))
   }
 
 }
