@@ -5,7 +5,7 @@ import org.tomlj.TomlTable
 
 import scala.jdk.CollectionConverters._
 
-case class NetworkDef(title: String, storesLink: String, dealsLink: String)
+case class NetworkDef(title: String, storesLink: String, dealsLink: String, storesFilter: Seq[Long] = Seq.empty)
 
 class ConfigException(reason: String) extends RuntimeException(reason)
 
@@ -46,15 +46,24 @@ class TomlBasedAppConfig(private val toml: TomlTable) extends AppConfig {
       if (!allNetworksTable.isTable(key)) {
         throw new ConfigException(s"Sub-key $key of $KEY_NETWORKS should be a table")
       } else {
-        val netDesc = allNetworksTable.getTable(key)
-        Seq(Option(netDesc.getString("title")),
-          Option(netDesc.getString("stores")),
-          Option(netDesc.getString("deals"))).view
+        val maybeTable = Option(allNetworksTable.getTable(key))
+        val storesFilter: Option[Seq[Long]] = for {
+          table <- maybeTable
+          tomlArray <- Option(table.getArray("stores_filter"))
+          if !tomlArray.isEmpty && tomlArray.containsLongs()
+          values: Seq[Long] = (0 until tomlArray.size()).map(tomlArray.getLong)
+        } yield values
+
+        for {
+          table <- maybeTable
+          title <- Option(table.getString("title"))
+          storesLink <- Option(table.getString("stores"))
+          dealsLink <- Option(table.getString("deals"))
+        } yield NetworkDef(title, storesLink, dealsLink, storesFilter.getOrElse(Seq.empty))
       }
     )
-      .filter(_.forall(_.nonEmpty))
-      .map(_.map(_.get))
-      .map(list => NetworkDef(list(0), list(1), list(2)))
+      .filter(_.nonEmpty)
+      .map(_.get)
       .toSeq
   }
 }

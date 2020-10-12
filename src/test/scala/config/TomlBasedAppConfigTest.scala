@@ -38,24 +38,38 @@ class TomlBasedAppConfigTest extends AnyWordSpec {
       }
     }
 
-    "input contains partial network" should {
-      "return parsed networks" in {
+    "input contains filters of wrong type" should {
+      "return networks with no filters" in {
         val strVal =
           """[networks]
             |[networks.one]
             |title = "first"
             |stores = "http://stores.one"
             |deals = "http://deals.one"
-            |
-            |[networks.two]
-            |title = "second"
-            |stores = "http://stores.two"
-            |deals = "http://deals.two"
+            |storesFilter = ["1", "2"]
             |""".stripMargin
 
         val parsed = Set(
           NetworkDef(title = "first", storesLink = "http://stores.one", dealsLink = "http://deals.one"),
-          NetworkDef(title = "second", storesLink = "http://stores.two", dealsLink = "http://deals.two"),
+        )
+
+        assertResult(parsed)(configFrom(strVal).networks().toSet)
+      }
+    }
+
+    "input contains filters" should {
+      "return networks with filters" in {
+        val strVal =
+          """[networks]
+            |[networks.one]
+            |title = "first"
+            |stores = "http://stores.one"
+            |deals = "http://deals.one"
+            |stores_filter = [1, 2]
+            |""".stripMargin
+
+        val parsed = Set(
+          NetworkDef(title = "first", storesLink = "http://stores.one", dealsLink = "http://deals.one", storesFilter = Seq(1L, 2L)),
         )
 
         assertResult(parsed)(configFrom(strVal).networks().toSet)
@@ -133,7 +147,7 @@ class TomlBasedAppConfigTest extends AnyWordSpec {
       }
     }
 
-    "missind network requested" should {
+    "missing network requested" should {
       "return None" in {
         val strVal =
           """[networks]
