@@ -15,7 +15,7 @@ import scala.collection.mutable
 import scala.concurrent.{ExecutionContextExecutor, Future}
 
 object DealsProvider {
-  val PAGE_SIZE = 10
+  val PAGE_SIZE = 30
 }
 
 class DealsProvider(private val store: Store,

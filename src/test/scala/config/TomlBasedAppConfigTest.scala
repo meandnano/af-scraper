@@ -9,8 +9,8 @@ class TomlBasedAppConfigTest extends AnyWordSpec {
 
   "networks()" when {
     "empty input" should {
-      "return empty Seq" in {
-        assertResult(Seq())(configFrom("").networks())
+      "return empty Map" in {
+        assertResult(Map())(configFrom("").networks())
       }
     }
 
@@ -30,8 +30,8 @@ class TomlBasedAppConfigTest extends AnyWordSpec {
             |""".stripMargin
 
         val parsed = Set(
-          NetworkDef(title = "first", storesLink = "http://stores.one", dealsLink = "http://deals.one"),
-          NetworkDef(title = "second", storesLink = "http://stores.two", dealsLink = "http://deals.two"),
+          "one" -> NetworkDef(title = "first", storesLink = "http://stores.one", dealsLink = "http://deals.one"),
+          "two" -> NetworkDef(title = "second", storesLink = "http://stores.two", dealsLink = "http://deals.two")
         )
 
         assertResult(parsed)(configFrom(strVal).networks().toSet)
@@ -50,7 +50,7 @@ class TomlBasedAppConfigTest extends AnyWordSpec {
             |""".stripMargin
 
         val parsed = Set(
-          NetworkDef(title = "first", storesLink = "http://stores.one", dealsLink = "http://deals.one"),
+          "one" -> NetworkDef(title = "first", storesLink = "http://stores.one", dealsLink = "http://deals.one"),
         )
 
         assertResult(parsed)(configFrom(strVal).networks().toSet)
@@ -69,7 +69,7 @@ class TomlBasedAppConfigTest extends AnyWordSpec {
             |""".stripMargin
 
         val parsed = Set(
-          NetworkDef(title = "first", storesLink = "http://stores.one", dealsLink = "http://deals.one", storesFilter = Seq(1L, 2L)),
+          "one" -> NetworkDef(title = "first", storesLink = "http://stores.one", dealsLink = "http://deals.one", storesFilter = Seq(1L, 2L)),
         )
 
         assertResult(parsed)(configFrom(strVal).networks().toSet)
@@ -99,7 +99,7 @@ class TomlBasedAppConfigTest extends AnyWordSpec {
             |""".stripMargin
 
         val parsed = Set(
-          NetworkDef(title = "first", storesLink = "http://stores.one", dealsLink = "http://deals.one"),
+          "one" -> NetworkDef(title = "first", storesLink = "http://stores.one", dealsLink = "http://deals.one"),
         )
 
         assertResult(parsed)(configFrom(strVal).networks().toSet)
@@ -115,7 +115,7 @@ class TomlBasedAppConfigTest extends AnyWordSpec {
               |deals = "http://deals.one"
               |""".stripMargin
 
-          assertResult(Seq())(configFrom(strVal).networks())
+          assertResult(Map())(configFrom(strVal).networks())
         }
       }
 
