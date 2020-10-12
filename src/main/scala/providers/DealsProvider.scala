@@ -11,18 +11,19 @@ import config.NetworkDef
 import io.RequestHandler
 import org.slf4j.LoggerFactory
 
+import scala.collection.mutable
 import scala.concurrent.{ExecutionContextExecutor, Future}
 
 object DealsProvider {
-  val PAGE_SIZE = 50
+  val PAGE_SIZE = 10
 }
 
 class DealsProvider(private val store: Store,
                     private val networkDef: NetworkDef,
                     private val requestHandler: RequestHandler,
-                    private val makeADeal: (ObjectNode, Long) => Deal)(implicit val actorSystem: ActorSystem) {
+                    private val makeADeal: ObjectNode => Deal)(implicit val actorSystem: ActorSystem) {
 
-  private def logger = LoggerFactory.getLogger(getClass.getSimpleName)
+  private val logger = LoggerFactory.getLogger(getClass.getSimpleName)
 
   private val mapper = new ObjectMapper()
 
@@ -42,7 +43,7 @@ class DealsProvider(private val store: Store,
             .via(JsonReader.select("$.results[*]"))
             .map(_.utf8String)
             .map(mapper.readTree(_).asInstanceOf[ObjectNode])
-            .map(makeADeal(_, store.internalId))
+            .map(makeADeal)
             .runWith(Sink.seq)
             .map(results => if (results.isEmpty) None else Some((results.size + offset, results)))
         }
@@ -61,8 +62,10 @@ class DealsProvider(private val store: Store,
       .mapValues(_.toString)
       .toMap
 
-    val uri = Uri(networkDef.dealsLink).withQuery(Uri.Query(params))
-    logger.info(uri.toString())
-    HttpRequest(uri = uri)
+    val originalUri = Uri(networkDef.dealsLink)
+    val modifiedQuery = mutable.Map.from(originalUri.query().toMap).addAll(params).toMap
+    val targetUri = originalUri.withQuery(Uri.Query(modifiedQuery))
+    logger.info(s"Requesting deals from $targetUri")
+    HttpRequest(uri = targetUri)
   }
 }

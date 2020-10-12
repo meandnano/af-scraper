@@ -21,17 +21,17 @@ import scala.jdk.CollectionConverters._
 
 class DealsProviderTest extends AnyWordSpec with BeforeAndAfter {
 
-  val store = Store(
+  val store = new Store(
     internalId = 100500L,
     networkTitle = "Penny store Greenland",
-    location = PointLocation(72.932646, -41.9906897),
-    address = "Greenland Ice, Greenland"
+    location = Option(PointLocation(72.932646, -41.9906897)),
+    address = Option("Greenland Ice, Greenland")
   )
 
-  val networkDef = NetworkDef(
+  val networkDef: NetworkDef = NetworkDef(
     title = "Penny store Inc,",
     storesLink = "http://pennys.one/stores",
-    dealsLink = "http://pennys.one/deals"
+    dealsLink = "http://pennys.one/deals?some=thing"
   )
 
   val theDeal = new Deal(
@@ -46,9 +46,9 @@ class DealsProviderTest extends AnyWordSpec with BeforeAndAfter {
     dateEnd = None,
   )
 
-  val makeADeal = { (_: ObjectNode, _: Long) => theDeal }
+  val makeADeal: ObjectNode => Deal = (_: ObjectNode) => theDeal
 
-  def reponsewithBody(body: String) = HttpResponse(entity =
+  def responseWithBody(body: String): HttpResponse = HttpResponse(entity =
     Strict(
       contentType = ContentType(MediaType.applicationWithOpenCharset("json"), HttpCharsets.`UTF-8`),
       data = ByteString(body)
@@ -69,9 +69,9 @@ class DealsProviderTest extends AnyWordSpec with BeforeAndAfter {
       override def answer(invocation: InvocationOnMock): Future[HttpResponse] = {
         returned += 1
         if (returned <= pages) {
-          Future.successful(reponsewithBody(body))
+          Future.successful(responseWithBody(body))
         } else {
-          Future.successful(reponsewithBody(""))
+          Future.successful(responseWithBody(""))
         }
       }
     })
@@ -80,7 +80,7 @@ class DealsProviderTest extends AnyWordSpec with BeforeAndAfter {
   }
 
   "stream()" should {
-    implicit val system = ActorSystem()
+    implicit val system: ActorSystem = ActorSystem()
 
     "make paged requests" when {
       "response is not empty" in {
@@ -116,11 +116,12 @@ class DealsProviderTest extends AnyWordSpec with BeforeAndAfter {
   }
 
   def verifyPageRequest(request: HttpRequest, storeId: Long = 100500L, pageSize: Int, offset: Int): Unit = {
-    def headerValue(header: String): Option[String] = request.uri.query().get(header)
+    def queryValue(key: String): Option[String] = request.uri.query().get(key)
 
-    assertResult(Some(storeId.toString))(headerValue("q"))
-    assertResult(Some(pageSize.toString))(headerValue("size"))
-    assertResult(Some(offset.toString))(headerValue("offlineSize"))
+    assertResult(Some(storeId.toString))(queryValue("q"))
+    assertResult(Some(pageSize.toString))(queryValue("size"))
+    assertResult(Some(offset.toString))(queryValue("offlineSize"))
+    assertResult(Some("thing"))(queryValue("some"))
   }
 
 }
