@@ -23,7 +23,7 @@ object Deal {
 
   private lazy val LOGGER = LoggerFactory.getLogger("DealsParser")
 
-  def apply(node: ObjectNode, storeID: Long): Deal = {
+  def apply(storeID: Long)(node: ObjectNode): Deal = {
     LOGGER.debug(s"Parsing providers.Deal from $node for store $storeID")
 
     val name: String = Seq(
