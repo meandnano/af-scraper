@@ -17,6 +17,7 @@ import org.scalatest.BeforeAndAfter
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.concurrent.Future
+import scala.concurrent.duration.DurationInt
 import scala.jdk.CollectionConverters._
 
 class DealsProviderTest extends AnyWordSpec with BeforeAndAfter {
@@ -85,7 +86,7 @@ class DealsProviderTest extends AnyWordSpec with BeforeAndAfter {
     "make paged requests" when {
       "response is not empty" in {
         val handler: RequestHandler = mockRequestHandler(pages = 2, itemsPerPage = 3)
-        new DealsProvider(store, networkDef, handler, makeADeal)
+        new DealsProvider(store, networkDef, handler, 0.seconds, makeADeal)
           .stream()
           .runWith(TestSink.probe)
           .request(7)
@@ -105,7 +106,7 @@ class DealsProviderTest extends AnyWordSpec with BeforeAndAfter {
 
     "parse all items in paged requests" when {
       "response in not empty" in {
-        new DealsProvider(store, networkDef, mockRequestHandler(pages = 2, itemsPerPage = 3), makeADeal)
+        new DealsProvider(store, networkDef, mockRequestHandler(pages = 2, itemsPerPage = 3), 0.seconds, makeADeal)
           .stream()
           .runWith(TestSink.probe)
           .request(7)

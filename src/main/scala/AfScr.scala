@@ -10,6 +10,7 @@ import providers.{Deal, DealsProvider, Store, StoresProvider}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success}
 
 object AfScr {
@@ -48,7 +49,7 @@ object AfScr {
       new StoresProvider(networkDef, requestHandler, Store(networkKey))
         .stream()
         .filter(storesFilter)
-        .map(store => new DealsProvider(store, networkDef, requestHandler, Deal(store.internalId)))
+        .map(store => new DealsProvider(store, networkDef, requestHandler, 5.seconds, Deal(store.internalId)))
         .flatMapConcat(_.stream())
         .alsoToMat(Sink.fold(0L)((count, _) => count + 1))(Keep.right)
         .toMat(Sink.foreach(println))(Keep.both)
