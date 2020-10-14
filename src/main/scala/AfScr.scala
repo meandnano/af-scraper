@@ -1,9 +1,10 @@
 import java.nio.file.Paths
 
+import akka.Done
 import akka.actor.ActorSystem
-import akka.stream.scaladsl.{Keep, Sink}
+import akka.stream.scaladsl.{Keep, Sink, Source}
 import config.{NetworkDef, TomlBasedAppConfig}
-import io.{RequestHandler, RequestHandlerImpl}
+import io._
 import org.slf4j.LoggerFactory
 import org.tomlj.Toml
 import providers.{Deal, DealsProvider, Store, StoresProvider}
@@ -24,11 +25,26 @@ object AfScr {
     }
 
     val config = new TomlBasedAppConfig(Toml.parse(Paths.get(args(0))))
+
+    val maybeDbUri = config.mongoDbUri()
+    if (maybeDbUri.isEmpty) {
+      logger.error("No DB URI configured")
+      System.exit(2)
+    }
+
+    val dbUri = maybeDbUri.get
+
     implicit val system: ActorSystem = ActorSystem()
     implicit val requestHandler: RequestHandler = new RequestHandlerImpl()
 
+    val storageManager = new MongoBasedStorageManager(dbUri)
+    implicit val dao: Dao = new DaoImpl(storageManager)
+
     val networks: Map[String, NetworkDef] = config.networks()
-    val count = Future.sequence(networks.map { case (key, networkDef) => loadNetwork(key, networkDef) })
+    val count = dao.initialize() // make sure indices are created
+      .flatMap(_ => // load stores and deals for every network
+        Future.sequence(networks.map { case (key, networkDef) => loadNetwork(key, networkDef) })
+      )
 
     count.onComplete {
       case Failure(exception) =>
@@ -39,23 +55,33 @@ object AfScr {
     }(system.dispatcher)
   }
 
-  def loadNetwork(networkKey: String, networkDef: NetworkDef)(implicit requestHandler: RequestHandler, system: ActorSystem): Future[Long] = {
+  def loadNetwork(networkKey: String, networkDef: NetworkDef)(implicit requestHandler: RequestHandler, dao: Dao, system: ActorSystem): Future[Long] = {
     val storesFilter: Store => Boolean = networkDef.storesFilter match {
       case Seq() => _ => true
       case whitelisted: Seq[Long] => store => whitelisted.contains(store.internalId)
     }
 
-    val (count, _) =
-      new StoresProvider(networkDef, requestHandler, Store(networkKey))
-        .stream()
-        .filter(storesFilter)
-        .map(store => new DealsProvider(store, networkDef, requestHandler, 5.seconds, Deal(store.internalId)))
-        .flatMapConcat(_.stream())
-        .alsoToMat(Sink.fold(0L)((count, _) => count + 1))(Keep.right)
-        .toMat(Sink.foreach(println))(Keep.both)
-        .run()
+    val stores = new StoresProvider(networkDef, requestHandler, Store(networkKey))
+      .stream()
+      .filter(storesFilter)
+      .runWith(Sink.seq)
 
-    count
+    stores.flatMap(dao.saveStores)
+      .transformWith {
+        case Failure(exception) => logger.error("Unable to save stores", exception)
+          Future.successful(0L)
+        case Success(value) => logger.info(s"Successfully save stores: $value")
+          val (count: Future[Long], _: Future[Done]) =
+            Source.future(stores)
+              .mapConcat(identity)
+              .map(store => new DealsProvider(store, networkDef, requestHandler, 5.seconds, Deal(store.internalId)))
+              .flatMapConcat(_.stream())
+              .alsoToMat(Sink.fold(0L)((count, _) => count + 1))(Keep.right)
+              .toMat(Sink.foreach(deal => logger.debug(deal.toString)))(Keep.both)
+              .run()
+
+          count
+      }
   }
 
 }
