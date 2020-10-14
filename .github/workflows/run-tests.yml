@@ -2,6 +2,9 @@ name: run-tests
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - main
 jobs:
   test:
     name: Run sbt test
