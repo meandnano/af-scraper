@@ -7,7 +7,7 @@ scalaVersion := "2.13.3"
 lazy val akkaVersion = "2.6.9"
 libraryDependencies ++= Seq(
   "org.tomlj" % "tomlj" % "1.0.0",
-  "org.reactivemongo" %% "reactivemongo" % "1.0.0-noshaded",
+  "org.reactivemongo" %% "reactivemongo" % "1.0.0",
   "ch.qos.logback" % "logback-classic" % "1.0.13",
   "com.typesafe.akka" %% "akka-http-core" % "10.2.0",
   "com.typesafe.akka" %% "akka-stream" % akkaVersion,
