@@ -10,6 +10,8 @@ case class NetworkDef(title: String, storesLink: String, dealsLink: String, stor
 class ConfigException(reason: String) extends RuntimeException(reason)
 
 trait AppConfig {
+  def mongoDbUri(): Option[String]
+
   def networks(): Map[String, NetworkDef]
 
   def network(networkKey: String): Option[NetworkDef]
@@ -21,6 +23,9 @@ class TomlBasedAppConfig(private val toml: TomlTable) extends AppConfig {
 
   private lazy val logger = LoggerFactory.getLogger(getClass.getSimpleName)
   private lazy val allNetworksTable = toml.getTable(KEY_NETWORKS)
+
+  override def mongoDbUri(): Option[String] = Option(toml.getString("mongo_uri"))
+    .filter(_.nonEmpty)
 
   override def networks(): Map[String, NetworkDef] = {
     if (!toml.isTable(KEY_NETWORKS)) {
@@ -66,4 +71,5 @@ class TomlBasedAppConfig(private val toml: TomlTable) extends AppConfig {
       .map(_.get)
       .toMap
   }
+
 }

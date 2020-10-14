@@ -1,11 +1,37 @@
 package config
 
 import org.scalatest.wordspec.AnyWordSpec
-import org.tomlj.Toml
+import org.tomlj.{Toml, TomlInvalidTypeException}
 
 class TomlBasedAppConfigTest extends AnyWordSpec {
 
   def configFrom(str: String): TomlBasedAppConfig = new TomlBasedAppConfig(Toml.parse(str))
+
+  "mongoUri()" when {
+    "presented as string" should {
+      "return it" in {
+        val toml = """mongo_uri = "mongo://112233" """
+
+        assertResult(Some("mongo://112233"))(configFrom(toml).mongoDbUri())
+      }
+    }
+
+    "missing" should {
+      "return None" in {
+        assertResult(None)(configFrom("").mongoDbUri())
+      }
+    }
+
+    "presented as non-string" should {
+      "return it" in {
+        val toml = """mongo_uri = 112"""
+
+        assertThrows[TomlInvalidTypeException] {
+          configFrom(toml).mongoDbUri()
+        }
+      }
+    }
+  }
 
   "networks()" when {
     "empty input" should {
