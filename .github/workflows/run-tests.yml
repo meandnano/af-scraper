@@ -1,5 +1,7 @@
 name: run-tests
-on: [ push, pull-request ]
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
 jobs:
   test:
     name: Run sbt test
