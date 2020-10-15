@@ -37,7 +37,7 @@ class DealsProviderTest extends AnyWordSpec with BeforeAndAfter {
 
   val theDeal = new Deal(
     source = "Fake Source",
-    store = 100500L,
+    store = store,
     title = "Fake deal",
     imgUrl = None,
     priceUnit = None,
