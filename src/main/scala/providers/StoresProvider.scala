@@ -16,6 +16,14 @@ class StoresProvider(networkDef: NetworkDef,
 
   private val mapper = new ObjectMapper()
 
+  /**
+   * Checks whether passed json node is "online store"
+   */
+  private def isOnlineStores(node: ObjectNode): Boolean =
+    Option(node.get("onlineStore"))
+      .filter(_.isBoolean)
+      .forall(_.asBoolean())
+
   def stream(): Source[Store, NotUsed] = {
     val request = HttpRequest(uri = Uri(networkDef.storesLink))
     Source.future(requestHandler.handle(request))
@@ -24,6 +32,7 @@ class StoresProvider(networkDef: NetworkDef,
       .via(JsonReader.select("$[*]"))
       .map(_.utf8String)
       .map(mapper.readTree(_).asInstanceOf[ObjectNode])
+      .filterNot(isOnlineStores)
       .map(makeAStore)
       .filter(_.nonEmpty)
       .map(_.get)
