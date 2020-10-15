@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory
 import scala.util.{Failure, Success, Try}
 
 case class Deal(source: String,
-                store: Long,
+                store: Store,
                 title: String,
                 imgUrl: Option[String],
                 priceUnit: Option[String],
@@ -23,8 +23,8 @@ object Deal {
 
   private lazy val LOGGER = LoggerFactory.getLogger("DealsParser")
 
-  def apply(storeID: Long)(node: ObjectNode): Deal = {
-    LOGGER.debug(s"Parsing providers.Deal from $node for store $storeID")
+  def apply(store: Store)(node: ObjectNode): Deal = {
+    LOGGER.debug(s"Parsing providers.Deal from $node for store ${store.internalId}")
 
     val name: String = Seq(
       node.get("name"),
@@ -47,7 +47,7 @@ object Deal {
 
     val promoObj = node.withArray[ArrayNode]("potentialPromotions").get(0)
     new Deal(source = "hk",
-      store = storeID,
+      store = store,
       title = name,
       imgUrl = imgUrl,
       priceUnit = Option(node.get("priceUnit")).map(_.asText()),

@@ -74,7 +74,7 @@ object AfScr {
           val (count: Future[Long], _: Future[Done]) =
             Source.future(stores)
               .mapConcat(identity)
-              .map(store => new DealsProvider(store, networkDef, requestHandler, 5.seconds, Deal(store.internalId)))
+              .map(store => new DealsProvider(store, networkDef, requestHandler, 5.seconds, Deal(store)))
               .flatMapConcat(_.stream())
               .alsoToMat(Sink.fold(0L)((count, _) => count + 1))(Keep.right)
               .toMat(Sink.foreach(deal => logger.debug(deal.toString)))(Keep.both)
