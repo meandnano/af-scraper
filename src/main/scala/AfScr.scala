@@ -1,13 +1,12 @@
 import java.nio.file.Paths
 
-import akka.Done
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import config.{NetworkDef, TomlBasedAppConfig}
-import io._
+import persistence._
 import org.slf4j.LoggerFactory
 import org.tomlj.Toml
-import providers.{Deal, DealsProvider, Store, StoresProvider}
+import providers.{DealsProvider, RequestHandler, RequestHandlerImpl, StoresProvider}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

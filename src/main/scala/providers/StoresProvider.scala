@@ -8,7 +8,7 @@ import akka.stream.scaladsl.Source
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import config.NetworkDef
-import io.RequestHandler
+import persistence.Store
 
 class StoresProvider(networkDef: NetworkDef,
                      requestHandler: RequestHandler,

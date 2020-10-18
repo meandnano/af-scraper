@@ -1,4 +1,4 @@
-package io
+package persistence
 
 import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.api.{AsyncDriver, DB, MongoConnection}

@@ -7,7 +7,6 @@ import akka.stream.testkit.scaladsl.TestSink
 import akka.util.ByteString
 import com.fasterxml.jackson.databind.node.ObjectNode
 import config.NetworkDef
-import io.RequestHandler
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{times, verify, when}
 import org.mockito.invocation.InvocationOnMock
@@ -15,9 +14,10 @@ import org.mockito.stubbing.Answer
 import org.mockito.{ArgumentCaptor, Mockito}
 import org.scalatest.BeforeAndAfter
 import org.scalatest.wordspec.AnyWordSpec
+import persistence.{Deal, PointLocation, Store}
 
 import scala.concurrent.Future
-import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.jdk.CollectionConverters._
 
 class DealsProviderTest extends AnyWordSpec with BeforeAndAfter {

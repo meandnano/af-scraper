@@ -12,6 +12,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http-core" % "10.2.0",
   "com.typesafe.akka" %% "akka-stream" % akkaVersion,
   "com.lightbend.akka" %% "akka-stream-alpakka-json-streaming" % "2.0.2",
+  "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.11.3",
 
   "org.scalatest" %% "scalatest" % "3.2.0" % Test,
   "com.typesafe.akka" %% "akka-actor-testkit-typed" % akkaVersion % Test,

@@ -8,8 +8,8 @@ import akka.stream.scaladsl.{Sink, Source}
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import config.NetworkDef
-import io.RequestHandler
 import org.slf4j.LoggerFactory
+import persistence.{Deal, Store}
 
 import scala.collection.mutable
 import scala.concurrent.duration.FiniteDuration
