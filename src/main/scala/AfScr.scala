@@ -1,18 +1,17 @@
 import java.nio.file.Paths
 
-import akka.Done
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import config.{NetworkDef, TomlBasedAppConfig}
-import io._
+import persistence._
 import org.slf4j.LoggerFactory
 import org.tomlj.Toml
-import providers.{Deal, DealsProvider, Store, StoresProvider}
+import providers.{DealsProvider, RequestHandler, RequestHandlerImpl, StoresProvider}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Random, Success}
 
 object AfScr {
 
@@ -66,21 +65,21 @@ object AfScr {
       .filter(storesFilter)
       .runWith(Sink.seq)
 
+    val rand = new Random(System.nanoTime())
+    val delayer = () => (rand.nextInt(8) + 3).seconds
+
     stores.flatMap(dao.saveStores)
       .transformWith {
         case Failure(exception) => logger.error("Unable to save stores", exception)
           Future.successful(0L)
         case Success(value) => logger.info(s"Successfully save stores: $value")
-          val (count: Future[Long], _: Future[Done]) =
-            Source.future(stores)
-              .mapConcat(identity)
-              .map(store => new DealsProvider(store, networkDef, requestHandler, 5.seconds, Deal(store)))
-              .flatMapConcat(_.stream())
-              .alsoToMat(Sink.fold(0L)((count, _) => count + 1))(Keep.right)
-              .toMat(Sink.foreach(deal => logger.debug(deal.toString)))(Keep.both)
-              .run()
-
-          count
+          Source.future(stores)
+            .mapConcat(identity)
+            .map(store => new DealsProvider(store, networkDef, requestHandler, delayer, Deal(store)))
+            .flatMapMerge(3, _.stream())
+            .alsoToMat(Sink.fold(0L)((count, _) => count + 1))(Keep.right)
+            .toMat(dao.dealsSink())(Keep.left)
+            .run()
       }
   }
 
