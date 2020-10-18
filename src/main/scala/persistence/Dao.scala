@@ -1,7 +1,8 @@
-package io
+package persistence
 
+import akka.Done
+import akka.stream.scaladsl.Sink
 import org.slf4j.LoggerFactory
-import providers.Store
 import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.api.indexes.{Index, IndexType}
 
@@ -24,15 +25,19 @@ trait Dao {
    * @return Future-wrapper number of modified documents
    */
   def saveStores(stores: Seq[Store]): Future[Int]
+
+  def dealsSink(): Sink[Deal, Future[Future[Done]]]
 }
 
 class DaoImpl(private val storageManager: StorageManager) extends Dao {
 
-  import io.PersistentHandlers._
+  import persistence.PersistentHandlers._
 
   private val logger = LoggerFactory.getLogger(getClass.getSimpleName)
 
   private def storesCollection: Future[BSONCollection] = storageManager.collection("stores")
+
+  private def dealsCollection: Future[BSONCollection] = storageManager.collection("deals")
 
   def initialize(): Future[_] = {
     // Create unique compound index for Stores collections
@@ -46,6 +51,13 @@ class DaoImpl(private val storageManager: StorageManager) extends Dao {
     logger.info(s"Saving ${stores.size} stores...")
     storesCollection.flatMap(_.insert(ordered = false).many(stores))
       .map(_.nModified)
+  }
+
+  def dealsSink(): Sink[Deal, Future[Future[Done]]] = {
+    val futureSink = dealsCollection.map(col =>
+      Sink.foreachAsync[Deal](5)(deal => col.insert(ordered = false).one(deal).map(_ => ())))
+
+    Sink.futureSink(futureSink)
   }
 
 }

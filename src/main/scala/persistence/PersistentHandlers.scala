@@ -1,6 +1,5 @@
-package io
+package persistence
 
-import providers.{Deal, PointLocation, Store}
 import reactivemongo.api.bson.{BSONArray, BSONDocument, BSONDocumentHandler, Macros}
 
 import scala.util.{Success, Try}

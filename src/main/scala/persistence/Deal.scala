@@ -1,4 +1,4 @@
-package providers
+package persistence
 
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, ZoneId, ZonedDateTime}
@@ -8,8 +8,7 @@ import org.slf4j.LoggerFactory
 
 import scala.util.{Failure, Success, Try}
 
-case class Deal(source: String,
-                store: Store,
+case class Deal(store: Store,
                 title: String,
                 imgUrl: Option[String],
                 priceUnit: Option[String],
@@ -24,7 +23,7 @@ object Deal {
   private lazy val LOGGER = LoggerFactory.getLogger("DealsParser")
 
   def apply(store: Store)(node: ObjectNode): Deal = {
-    LOGGER.debug(s"Parsing providers.Deal from $node for store ${store.internalId}")
+    LOGGER.debug(s"Parsing persistence.Deal from $node for store ${store.internalId}")
 
     val name: String = Seq(
       node.get("name"),
@@ -46,7 +45,7 @@ object Deal {
       .headOption
 
     val promoObj = node.withArray[ArrayNode]("potentialPromotions").get(0)
-    new Deal(source = "hk",
+    new Deal(
       store = store,
       title = name,
       imgUrl = imgUrl,
