@@ -36,7 +36,6 @@ class DealsProviderTest extends AnyWordSpec with BeforeAndAfter {
   )
 
   val theDeal = new Deal(
-    source = "Fake Source",
     store = store,
     title = "Fake deal",
     imgUrl = None,
@@ -48,6 +47,7 @@ class DealsProviderTest extends AnyWordSpec with BeforeAndAfter {
   )
 
   val makeADeal: ObjectNode => Deal = (_: ObjectNode) => theDeal
+  val fetchDelayer: () => FiniteDuration = () => 0.seconds
 
   def responseWithBody(body: String): HttpResponse = HttpResponse(entity =
     Strict(
@@ -86,7 +86,7 @@ class DealsProviderTest extends AnyWordSpec with BeforeAndAfter {
     "make paged requests" when {
       "response is not empty" in {
         val handler: RequestHandler = mockRequestHandler(pages = 2, itemsPerPage = 3)
-        new DealsProvider(store, networkDef, handler, 0.seconds, makeADeal)
+        new DealsProvider(store, networkDef, handler, fetchDelayer, makeADeal)
           .stream()
           .runWith(TestSink.probe)
           .request(7)
@@ -106,7 +106,7 @@ class DealsProviderTest extends AnyWordSpec with BeforeAndAfter {
 
     "parse all items in paged requests" when {
       "response in not empty" in {
-        new DealsProvider(store, networkDef, mockRequestHandler(pages = 2, itemsPerPage = 3), 0.seconds, makeADeal)
+        new DealsProvider(store, networkDef, mockRequestHandler(pages = 2, itemsPerPage = 3), fetchDelayer, makeADeal)
           .stream()
           .runWith(TestSink.probe)
           .request(7)
