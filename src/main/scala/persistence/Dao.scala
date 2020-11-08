@@ -2,7 +2,6 @@ package persistence
 
 import akka.Done
 import akka.stream.scaladsl.Sink
-import org.slf4j.LoggerFactory
 import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.api.indexes.{Index, IndexType}
 import util.Logging

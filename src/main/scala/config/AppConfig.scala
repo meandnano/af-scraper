@@ -1,6 +1,5 @@
 package config
 
-import org.slf4j.LoggerFactory
 import org.tomlj.TomlTable
 import util.Logging
 
