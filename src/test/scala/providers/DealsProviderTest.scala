@@ -25,6 +25,7 @@ class DealsProviderTest extends AnyWordSpec with BeforeAndAfter {
   val store = new Store(
     internalId = 100500L,
     networkKey = "pennys",
+    onlineOnly = false,
     location = Option(PointLocation(72.932646, -41.9906897)),
     address = Option("Greenland Ice, Greenland")
   )
