@@ -8,8 +8,8 @@ import akka.stream.scaladsl.{Sink, Source}
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import config.NetworkDef
-import org.slf4j.LoggerFactory
 import persistence.{Deal, Store}
+import util.Logging
 
 import scala.collection.mutable
 import scala.concurrent.duration.FiniteDuration
@@ -23,9 +23,7 @@ class DealsProvider(private val store: Store,
                     private val networkDef: NetworkDef,
                     private val requestHandler: RequestHandler,
                     private val delay: () => FiniteDuration,
-                    private val makeADeal: ObjectNode => Deal)(implicit val actorSystem: ActorSystem) {
-
-  private val logger = LoggerFactory.getLogger(getClass.getSimpleName)
+                    private val makeADeal: ObjectNode => Deal)(implicit val actorSystem: ActorSystem) extends Logging {
 
   private val mapper = new ObjectMapper()
 

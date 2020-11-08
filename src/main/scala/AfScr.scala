@@ -3,19 +3,17 @@ import java.nio.file.Paths
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import config.{NetworkDef, TomlBasedAppConfig}
-import persistence._
-import org.slf4j.LoggerFactory
 import org.tomlj.Toml
+import persistence._
 import providers.{DealsProvider, RequestHandler, RequestHandlerImpl, StoresProvider}
+import util.Logging
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Random, Success}
 
-object AfScr {
-
-  private val logger = LoggerFactory.getLogger("src-af")
+object AfScr extends Logging {
 
   def main(args: Array[String]): Unit = {
     if (args.length < 1) {
@@ -61,7 +59,7 @@ object AfScr {
       .runWith(Sink.seq)
 
     val rand = new Random(System.nanoTime())
-    val delayer = () => (rand.nextInt(8) + 3).seconds
+    val delayer = () => (rand.nextInt(8) + 3).seconds // delay before request will be 3-10 seconds
 
     stores.flatMap(dao.saveStores)
       .transformWith {
