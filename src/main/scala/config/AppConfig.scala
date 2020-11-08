@@ -2,6 +2,7 @@ package config
 
 import org.slf4j.LoggerFactory
 import org.tomlj.TomlTable
+import util.Logging
 
 import scala.jdk.CollectionConverters._
 
@@ -18,10 +19,9 @@ trait AppConfig {
 }
 
 
-class TomlBasedAppConfig(private val toml: TomlTable) extends AppConfig {
+class TomlBasedAppConfig(private val toml: TomlTable) extends AppConfig with Logging {
   private final val KEY_NETWORKS = "networks"
 
-  private lazy val logger = LoggerFactory.getLogger(getClass.getSimpleName)
   private lazy val allNetworksTable = toml.getTable(KEY_NETWORKS)
 
   override def mongoDbUri(): Option[String] = Option(toml.getString("mongo_uri"))

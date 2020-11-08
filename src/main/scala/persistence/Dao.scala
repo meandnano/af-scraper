@@ -5,6 +5,7 @@ import akka.stream.scaladsl.Sink
 import org.slf4j.LoggerFactory
 import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.api.indexes.{Index, IndexType}
+import util.Logging
 
 import scala.concurrent.Future
 // TODO switch to IO bound EC
@@ -29,11 +30,9 @@ trait Dao {
   def dealsSink(): Sink[Deal, Future[Future[Done]]]
 }
 
-class DaoImpl(private val storageManager: StorageManager) extends Dao {
+class DaoImpl(private val storageManager: StorageManager) extends Dao with Logging {
 
   import persistence.PersistentHandlers._
-
-  private val logger = LoggerFactory.getLogger(getClass.getSimpleName)
 
   private def storesCollection: Future[BSONCollection] = storageManager.collection("stores")
 
