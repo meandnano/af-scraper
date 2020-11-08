@@ -1,9 +1,12 @@
 package config
 
+import java.time.ZoneId
+
 import org.tomlj.TomlTable
 import util.Logging
 
 import scala.jdk.CollectionConverters._
+import scala.util.{Failure, Success, Try}
 
 case class NetworkDef(title: String, storesLink: String, dealsLink: String, storesFilter: Seq[Long] = Seq.empty)
 
@@ -11,6 +14,16 @@ class ConfigException(reason: String) extends RuntimeException(reason)
 
 trait AppConfig {
   def mongoDbUri(): Option[String]
+
+  /**
+   * Timezone for deals' begin-end dates<br/>
+   * Config key = 'timezone'<br/>
+   * Config value should be parse-able by ZoneId.of method.
+   *
+   * @return Some[ZoneId] is config value is present and correct;
+   *         None otherwise
+   */
+  def timezoneId(): Option[ZoneId]
 
   def networks(): Map[String, NetworkDef]
 
@@ -71,4 +84,12 @@ class TomlBasedAppConfig(private val toml: TomlTable) extends AppConfig with Log
       .toMap
   }
 
+  override def timezoneId(): Option[ZoneId] = Option(toml.getString("timezone"))
+    .filter(_.nonEmpty)
+    .flatMap(tzStr => Try(ZoneId.of(tzStr)) match {
+      case Failure(exception) =>
+        logger.error(s"Unable to parse timezone value $tzStr", exception)
+        None
+      case Success(value) => Some(value)
+    })
 }
