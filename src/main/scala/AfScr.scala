@@ -1,4 +1,5 @@
 import java.nio.file.Paths
+import java.time.LocalDate
 
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.{Keep, Sink, Source}
@@ -6,7 +7,7 @@ import config.{NetworkDef, TomlBasedAppConfig}
 import org.tomlj.Toml
 import persistence._
 import providers.{DealsProvider, RequestHandler, RequestHandlerImpl, StoresProvider}
-import util.Logging
+import util.{DealDateUtil, DealDateUtilImpl, Logging}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -22,6 +23,14 @@ object AfScr extends Logging {
     }
 
     val config = new TomlBasedAppConfig(Toml.parse(Paths.get(args(0))))
+
+    val maybeTimezone = config.timezoneId()
+    if (maybeTimezone.isEmpty) {
+      logger.error("No deals timezone configured")
+      System.exit(2)
+    }
+
+    val dateTimeParser = new DealDateUtilImpl(maybeTimezone.get, LocalDate.now)
 
     val maybeDbUri = config.mongoDbUri()
     if (maybeDbUri.isEmpty) {
@@ -40,7 +49,7 @@ object AfScr extends Logging {
     val networks: Map[String, NetworkDef] = config.networks()
     val count = dao.initialize() // make sure indices are created
       .flatMap(_ => // load stores and deals for every network
-        Future.sequence(networks.map { case (key, networkDef) => loadNetwork(key, networkDef) })
+        Future.sequence(networks.map { case (key, networkDef) => loadNetwork(key, networkDef, dateTimeParser) })
       )
 
     count.onComplete {
@@ -52,7 +61,11 @@ object AfScr extends Logging {
     }(system.dispatcher)
   }
 
-  def loadNetwork(networkKey: String, networkDef: NetworkDef)(implicit requestHandler: RequestHandler, dao: Dao, system: ActorSystem): Future[Long] = {
+  def loadNetwork(networkKey: String, networkDef: NetworkDef, dateTimeParser: DealDateUtil)(
+    implicit requestHandler: RequestHandler,
+    dao: Dao,
+    system: ActorSystem
+  ): Future[Long] = {
 
     val stores = new StoresProvider(networkDef, requestHandler, Store(networkKey))
       .stream()
@@ -68,7 +81,7 @@ object AfScr extends Logging {
         case Success(value) => logger.info(s"Successfully save stores: $value")
           Source.future(stores)
             .mapConcat(identity)
-            .map(store => new DealsProvider(store, networkDef, requestHandler, delayer, Deal(store)))
+            .map(store => new DealsProvider(store, networkDef, requestHandler, delayer, Deal(store, dateTimeParser)))
             .flatMapMerge(3, _.stream())
             .alsoToMat(Sink.fold(0L)((count, _) => count + 1))(Keep.right)
             .toMat(dao.dealsSink())(Keep.left)

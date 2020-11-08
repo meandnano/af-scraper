@@ -1,5 +1,7 @@
 package providers
 
+import java.time.{ZoneId, ZonedDateTime}
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.HttpEntity.Strict
 import akka.http.scaladsl.model._
@@ -20,6 +22,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.jdk.CollectionConverters._
 
+//noinspection TypeAnnotation,ZeroIndexToHead
 class DealsProviderTest extends AnyWordSpec with BeforeAndAfter {
 
   val store = new Store(
@@ -36,6 +39,9 @@ class DealsProviderTest extends AnyWordSpec with BeforeAndAfter {
     dealsLink = "http://pennys.one/deals?some=thing"
   )
 
+  val dealBegins = ZonedDateTime.of(2020, 1, 2, 0, 0, 0, 0, ZoneId.of("Australia/Darwin"))
+  val dealEnds = ZonedDateTime.of(2020, 2, 2, 0, 0, 0, 0, ZoneId.of("Australia/Darwin"))
+
   val theDeal = new Deal(
     store = store,
     title = "Fake deal",
@@ -43,8 +49,8 @@ class DealsProviderTest extends AnyWordSpec with BeforeAndAfter {
     priceUnit = None,
     priceOriginal = None,
     priceDisc = None,
-    dateStart = None,
-    dateEnd = None,
+    dateStart = dealBegins,
+    dateEnd = dealEnds,
   )
 
   val makeADeal: ObjectNode => Deal = (_: ObjectNode) => theDeal

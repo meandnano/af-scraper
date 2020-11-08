@@ -1,5 +1,7 @@
 package config
 
+import java.time.ZoneId
+
 import org.scalatest.wordspec.AnyWordSpec
 import org.tomlj.{Toml, TomlInvalidTypeException}
 
@@ -29,6 +31,37 @@ class TomlBasedAppConfigTest extends AnyWordSpec {
         assertThrows[TomlInvalidTypeException] {
           configFrom(toml).mongoDbUri()
         }
+      }
+    }
+  }
+
+  "timezone" when {
+    "contains correct region" should {
+      "return parsed value" in {
+        val toml = """timezone = "Australia/Darwin" """
+
+        assertResult(Some(ZoneId.of("Australia/Darwin")))(configFrom(toml).timezoneId())
+      }
+    }
+
+    "contains correct TZ name" should {
+      "return parsed value" in {
+        val toml = """timezone = "GMT+1" """
+
+        assertResult(Some(ZoneId.of("GMT+1")))(configFrom(toml).timezoneId())
+      }
+    }
+
+    "missing" should {
+      "return None" in {
+        assertResult(None)(configFrom("").mongoDbUri())
+      }
+    }
+
+    "incorrect" should {
+      "return None" in {
+        val toml = """timezone = "unknown" """
+        assertResult(None)(configFrom(toml).mongoDbUri())
       }
     }
   }
