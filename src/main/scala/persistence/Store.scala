@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 
 case class Store(internalId: Long,
                  networkKey: String,
+                 onlineOnly: Boolean,
                  location: Option[PointLocation],
                  address: Option[String])
 
@@ -31,7 +32,11 @@ object Store {
       .filter(_.isTextual)
       .map(_.textValue)
 
-    Some(new Store(internalId.get, networkKey, location, address))
+    val online = Option(node.get("onlineStore"))
+      .filter(_.isBoolean)
+      .forall(_.asBoolean())
+
+    Some(new Store(internalId.get, networkKey, online, location, address))
   }
 
 }

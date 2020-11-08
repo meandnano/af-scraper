@@ -9,20 +9,21 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import config.NetworkDef
 import persistence.Store
+import util.Logging
 
 class StoresProvider(networkDef: NetworkDef,
                      requestHandler: RequestHandler,
-                     makeAStore: ObjectNode => Option[Store])(implicit val actorSystem: ActorSystem) {
-
-  private val mapper = new ObjectMapper()
+                     makeAStore: ObjectNode => Option[Store])(implicit val actorSystem: ActorSystem) extends Logging {
 
   /**
-   * Checks whether passed json node is "online store"
+   * Filters stores by their internal ID based on the configured sores filter
    */
-  private def isOnlineStores(node: ObjectNode): Boolean =
-    Option(node.get("onlineStore"))
-      .filter(_.isBoolean)
-      .forall(_.asBoolean())
+  val storesFilter: Store => Boolean = networkDef.storesFilter match {
+    case Seq() => _ => true
+    case whitelisted: Seq[Long] => store => whitelisted.contains(store.internalId)
+  }
+
+  private val mapper = new ObjectMapper()
 
   def stream(): Source[Store, NotUsed] = {
     val request = HttpRequest(uri = Uri(networkDef.storesLink))
@@ -32,10 +33,14 @@ class StoresProvider(networkDef: NetworkDef,
       .via(JsonReader.select("$[*]"))
       .map(_.utf8String)
       .map(mapper.readTree(_).asInstanceOf[ObjectNode])
-      .filterNot(isOnlineStores)
       .map(makeAStore)
       .filter(_.nonEmpty)
       .map(_.get)
+      .filter(storesFilter)
+      .filter(store => {
+        logger.info(s"Fetched store ${store.internalId}. ${if (store.onlineOnly) "Skipping as it is online only" else ""}")
+        !store.onlineOnly
+      })
   }
 
 }

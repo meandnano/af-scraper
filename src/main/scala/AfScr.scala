@@ -55,14 +55,9 @@ object AfScr {
   }
 
   def loadNetwork(networkKey: String, networkDef: NetworkDef)(implicit requestHandler: RequestHandler, dao: Dao, system: ActorSystem): Future[Long] = {
-    val storesFilter: Store => Boolean = networkDef.storesFilter match {
-      case Seq() => _ => true
-      case whitelisted: Seq[Long] => store => whitelisted.contains(store.internalId)
-    }
 
     val stores = new StoresProvider(networkDef, requestHandler, Store(networkKey))
       .stream()
-      .filter(storesFilter)
       .runWith(Sink.seq)
 
     val rand = new Random(System.nanoTime())
