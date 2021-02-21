@@ -1,1 +1,1 @@
-A scraper for deals of certain shor networks
+A scraper of deals for certain shop chains
